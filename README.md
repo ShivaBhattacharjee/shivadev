@@ -1,15 +1,40 @@
-# npxshiva
+<p align="center">
+  <img src="https://github.com/ShivaBhattacharjee/portfolio-v2/assets/95211406/708decd8-8e67-4d59-86e9-f50cac7e5d0b" alt="Logo" >
 
-To install dependencies:
+   <h3 align="center">CLI tool to information about me</h3>
+</p>
 
+
+## To run this 
 ```bash
-bun install
+npx shivadev
 ```
 
-To run:
+### Local installation
 
 ```bash
-bun run index.ts
+git clone git@github.com:ShivaBhattacharjee/shiva-npm.git
+```
+```bash
+cd shiva-npm
+```
+```bash
+npm i
+```
+### Build 
+```bash
+npm run build
+```
+### Start
+```bash
+npm start
 ```
 
-This project was created using `bun init` in bun v1.1.9. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+
+## License
+
+Distributed under the MIT License . See [LICENSE](https://github.com/ShivaBhattacharjee/shiva-npm/blob/main/LICENSE) for more information.
+
+## Authors
+
+* **Shiva Bhattacharjee** - [Shiva Bhattacharjee](https://github.com/ShivaBhattacharjee)
