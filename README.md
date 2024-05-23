@@ -30,7 +30,15 @@ npm run build
 npm start
 ```
 
+### Publish to npm 
 
+```sh
+npm login
+```
+```sh
+npm publish
+```
+(make sure to change the name in package.json before publishing)
 ## License
 
 Distributed under the MIT License . See [LICENSE](https://github.com/ShivaBhattacharjee/shiva-npm/blob/main/LICENSE) for more information.
