@@ -1,0 +1,27 @@
+{
+  "name": "shivadev",
+  "module": "index.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "private": false,
+  "author": {"name": "Shiva Bhattacharjee"},
+  "bin": {
+    "shivadev": "dist/index.js"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },  
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "boxen": "^7.1.1",
+    "chalk": "^5.3.0"
+  },
+  "version": "1.0.0",
+  "license": "MIT"
+}
