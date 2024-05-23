@@ -8,6 +8,13 @@
   "bin": {
     "shivadev": "dist/index.js"
   },
+  "keywords": [
+    "cli",
+    "node",
+    "typescript",
+    "neofetch-nodejs",
+    "terminal-portfolio"
+  ],
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc"
@@ -22,6 +29,6 @@
     "boxen": "^7.1.1",
     "chalk": "^5.3.0"
   },
-  "version": "1.0.0",
+  "version": "1.0.8",
   "license": "MIT"
 }

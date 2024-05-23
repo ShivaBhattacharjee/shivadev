@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://github.com/ShivaBhattacharjee/portfolio-v2/assets/95211406/708decd8-8e67-4d59-86e9-f50cac7e5d0b" alt="Logo" >
 
-   <h3 align="center">CLI tool to information about me</h3>
+   <h3 align="center">CLI tool to display information about me</h3>
 </p>
 
 
