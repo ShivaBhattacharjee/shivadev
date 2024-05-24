@@ -35,12 +35,13 @@ const details = {
     GO: { icon: "🔵", color: chalk.blue },
     Rust: { icon: "🦀", color: chalk.red },
   },
-  framworks: {
-    React: { icon: "⚛️", color: chalk.cyan },
-    ExpressJs: { icon: "🗞", color: chalk.green },
-    NextJs: { icon: "🔋", color: chalk.red },
-    Svelte: { icon: "🟠", color: chalk.yellow },
-    tailwindcss: { icon: "🌪", color: chalk.blue },
+  frameworks: {
+    NextJs: { icon: "🌐 ", color: chalk.yellow },
+    ExpressJs: { icon: "🚂", color: chalk.blueBright },
+    TailwindCss: { icon: "🍃", color: chalk.green },
+    Hono: { icon: "🌐", color: chalk.blue },
+    Svelte: { icon: "🦀", color: chalk.red },
+    Gorilla: { icon: "🦍", color: chalk.red },
   },
   others: {
     Docker: { icon: "🐳", color: chalk.blue },
@@ -52,35 +53,39 @@ const details = {
 };
 
 const languagesArray = Object.entries(details.languages);
-const languagesRows = [];
-const frameworksArray = Object.entries(details.framworks);
-const frameworksRows = [];
+const frameworksArray = Object.entries(details.frameworks);
 const othersArray = Object.entries(details.others);
+
+const languagesRows = [];
+const frameworksRows = [];
 const othersRows = [];
+
 for (let i = 0; i < languagesArray.length; i += 4) {
   const slicedLanguages = languagesArray.slice(i, i + 4);
   const row = slicedLanguages
     .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
-    .join("   ");
+    .join(" ");
   languagesRows.push(row);
 }
+
 for (let i = 0; i < frameworksArray.length; i += 4) {
   const slicedFrameworks = frameworksArray.slice(i, i + 4);
   const row = slicedFrameworks
     .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
-    .join("   ");
+    .join(" ");
   frameworksRows.push(row);
 }
+
 for (let i = 0; i < othersArray.length; i += 4) {
   const slicedOthers = othersArray.slice(i, i + 4);
   const row = slicedOthers
     .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
-    .join("   ");
+    .join(" ");
   othersRows.push(row);
 }
 
 const info = [
-  `${chalk.bold("🦷 Name:")}      ${details.name}`,
+  `${chalk.bold("🦷 Name:")}${details.name}`,
   `${chalk.bold("💡 About:")} ${details.occupation}`,
   `${chalk.bold("🌐 Website:")}   ${details.website}`,
   `${chalk.bold("🐙 GitHub:")}    ${details.github}`,
@@ -90,8 +95,8 @@ const info = [
   ...languagesRows,
   `${chalk.bold("🔧 Frameworks:")}`,
   ...frameworksRows,
-    `${chalk.bold("🔧 Others:")}`,
-    ...othersRows,
+  `${chalk.bold("🔧 Others:")}`,
+  ...othersRows,
 ];
 
 const asciiLogoLines = asciiLogo.trim().split("\n");
