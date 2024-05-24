@@ -40,7 +40,7 @@ const details = {
     ExpressJs: { icon: "🚂", color: chalk.blueBright },
     TailwindCss: { icon: "🍃", color: chalk.green },
     Hono: { icon: "🌐", color: chalk.blue },
-    Svelte: { icon: "🦀", color: chalk.red },
+    Svelte: { icon: "🍊", color: chalk.red },
     Gorilla: { icon: "🦍", color: chalk.red },
   },
   others: {
