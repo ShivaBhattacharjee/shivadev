@@ -3,22 +3,28 @@
 import chalk from "chalk";
 import boxen from "boxen";
 
-// ASCII Logo
+// ASCII Logo (kept as pixel art) - escaped internal backticks to preserve exact art
 const asciiLogo = `
-⣿⣿⣿⣿⣿⣿⣿⣿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣿
-⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⣿
-⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠆⠜⣿
-⣿⣿⣿⣿⠿⠿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⣿⣿
-⣿⣿⡏⠁⠀⠀⠀⠀⠀⣀⣠⣤⣤⣶⣶⣶⣶⣶⣦⣤⡄⠀⠀⠀⠀⢀⣴⣿
-⣿⣿⣷⣄⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⡧⠇⢀⣤⣶
-⣿⣿⣿⣿⣿⣿⣾⣮⣭⣿⡻⣽⣒⠀⣤⣜⣭⠐⢐⣒⠢⢰
-⣿⣿⣿⣿⣿⣿⣿⣏⣿⣿⣿⣿⣿⣿⡟⣾⣿⠂⢈⢿⣷⣞
-⣿⣿⣿⣿⣿⣿⣿⣿⣽⣿⣿⣷⣶⣾⡿⠿⣿⠗⠈⢻⣿
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠻⠋⠉⠑⠀⠀⢘⢻
-⣿⣿⣿⣿⣿⣿⣿⡿⠟⢹⣿⣿⡇⢀⣶⣶⠴⠶⠀⠀⢽
-⣿⣿⣿⣿⣿⣿⡿⠀⠀⢸⣿⣿⠀⠀⠣⠀⠀⠀⠀⠀⡟⢿⣿
-⣿⣿⣿⡿⠟⠋⠀⠀⠀⠀⠹⣿⣧⣀⠀⠀⠀⠀⡀⣴⠁⢘⡙
-⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⠗⠂⠄⠀⣴⡟⠂⠈⠉    
+                                 ,        ,
+                                /(        )\`
+                                \\ \\___   / |
+                                /- _  \`-/  '
+                               (/\/ \\ \\   /\\
+                               / /   | \`    \\
+                               O O   ) /    |
+                               \`-^--'\`<     '
+                   TM         (_.)  _  )   /
+|  | |\\  | ~|~ \\ /             \`.___/\`    /
+|  | | \\ |  |   X                \`-----' /
+\`__| |  \\| _|_ / \\  <----.     __ / __   \\
+                    <----|====O)))==) \\) /====
+                    <----'    \`--' \`.__,' \\
+                                 |        |
+                                  \\       /
+                             ______( (_  / \\______
+                           ,'  ,-----'   |        \\
+                           \`--{__________)        \\
+
 `;
 
 const details = {
@@ -27,28 +33,28 @@ const details = {
   website: chalk.blue(`https://theshiva.xyz`),
   github: chalk.green(`https://github.com/shivabhattacharjee`),
   twitter: chalk.cyan(`https://twitter.com/sh17va`),
-  email: chalk.red(`   itsshivahere@outlook.com`),
+  email: chalk.red(`    sh7vabhattacharjee@gmail.com`),
   languages: {
-    JavaScript: { icon: "🟨", color: chalk.yellow },
-    Typescript: { icon: "🟦", color: chalk.blueBright },
-    Python: { icon: "🐍", color: chalk.green },
-    GO: { icon: "🔵", color: chalk.blue },
-    Rust: { icon: "🦀", color: chalk.red },
+    JavaScript: { color: chalk.yellow },
+    Typescript: { color: chalk.blueBright },
+    Python: { color: chalk.green },
+    GO: { color: chalk.blue },
+    Rust: { color: chalk.red },
   },
   frameworks: {
-    NextJs: { icon: "🌐 ", color: chalk.yellow },
-    ExpressJs: { icon: "🚂", color: chalk.blueBright },
-    TailwindCss: { icon: "🍃", color: chalk.green },
-    Hono: { icon: "🌐", color: chalk.blue },
-    Svelte: { icon: "🍊", color: chalk.red },
-    Gorilla: { icon: "🦍", color: chalk.red },
+    NextJs: { color: chalk.yellow },
+    ExpressJs: { color: chalk.blueBright },
+    TailwindCss: { color: chalk.green },
+    Hono: { color: chalk.blue },
+    Svelte: { color: chalk.red },
+    Gorilla: { color: chalk.red },
   },
   others: {
-    Docker: { icon: "🐳", color: chalk.blue },
-    mongodb: { icon: "🍃", color: chalk.green },
-    PostgreSQL: { icon: "🐘", color: chalk.blue },
-    Git: { icon: "🐙", color: chalk.blue },
-    Linux: { icon: "🐧", color: chalk.blue },
+    Docker: { color: chalk.blue },
+    mongodb: { color: chalk.green },
+    PostgreSQL: { color: chalk.blue },
+    Git: { color: chalk.blue },
+    Linux: { color: chalk.blue },
   }
 };
 
@@ -56,14 +62,14 @@ const languagesArray = Object.entries(details.languages);
 const frameworksArray = Object.entries(details.frameworks);
 const othersArray = Object.entries(details.others);
 
-const languagesRows = [];
-const frameworksRows = [];
-const othersRows = [];
+const languagesRows: string[] = [];
+const frameworksRows: string[] = [];
+const othersRows: string[] = [];
 
 for (let i = 0; i < languagesArray.length; i += 4) {
   const slicedLanguages = languagesArray.slice(i, i + 4);
   const row = slicedLanguages
-    .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
+    .map(([lang, { color }]) => `${color(`${lang}`)}`)
     .join(" ");
   languagesRows.push(row);
 }
@@ -71,7 +77,7 @@ for (let i = 0; i < languagesArray.length; i += 4) {
 for (let i = 0; i < frameworksArray.length; i += 4) {
   const slicedFrameworks = frameworksArray.slice(i, i + 4);
   const row = slicedFrameworks
-    .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
+    .map(([lang, { color }]) => `${color(`${lang}`)}`)
     .join(" ");
   frameworksRows.push(row);
 }
@@ -79,23 +85,23 @@ for (let i = 0; i < frameworksArray.length; i += 4) {
 for (let i = 0; i < othersArray.length; i += 4) {
   const slicedOthers = othersArray.slice(i, i + 4);
   const row = slicedOthers
-    .map(([lang, { icon, color }]) => `${color(`${icon} ${lang}`)}`)
+    .map(([lang, { color }]) => `${color(`${lang}`)}`)
     .join(" ");
   othersRows.push(row);
 }
 
 const info = [
-  `${chalk.bold("🦷 Name:")}${details.name}`,
-  `${chalk.bold("💡 About:")} ${details.occupation}`,
-  `${chalk.bold("🌐 Website:")}   ${details.website}`,
-  `${chalk.bold("🐙 GitHub:")}    ${details.github}`,
-  `${chalk.bold("🐦 Twitter:")}   ${details.twitter}`,
-  `${chalk.bold("📧 Email:")} ${details.email}`,
-  `${chalk.bold("💻 Languages:")}`,
+  `${chalk.bold("Name:")}${details.name}`,
+  `${chalk.bold("About:")} ${details.occupation}`,
+  `${chalk.bold("Website:")}   ${details.website}`,
+  `${chalk.bold("GitHub:")}    ${details.github}`,
+  `${chalk.bold("Twitter:")}   ${details.twitter}`,
+  `${chalk.bold("Email:")} ${details.email}`,
+  `${chalk.bold("Languages:")}`,
   ...languagesRows,
-  `${chalk.bold("🔧 Frameworks:")}`,
+  `${chalk.bold("Frameworks:")}`,
   ...frameworksRows,
-  `${chalk.bold("🔧 Others:")}`,
+  `${chalk.bold("Others:")}`,
   ...othersRows,
 ];
 
@@ -103,10 +109,8 @@ const asciiLogoLines = asciiLogo.trim().split("\n");
 const infoLines = info;
 
 const logoWidth = Math.max(...asciiLogoLines.map((line) => line.length));
-const detailsWidth = Math.max(...infoLines.map((line) => line.length));
-logoWidth + 4 + detailsWidth;
 
-const outputLines = [];
+const outputLines: string[] = [];
 for (let i = 0; i < Math.max(asciiLogoLines.length, infoLines.length); i++) {
   const logoLine = asciiLogoLines[i] || "";
   const infoLine = infoLines[i] || "";
@@ -116,6 +120,22 @@ for (let i = 0; i < Math.max(asciiLogoLines.length, infoLines.length); i++) {
 
 const output = outputLines.join("\n");
 
-const message = boxen(output, { padding: 1, margin: 1, borderStyle: "classic" });
+// Pixelated border using block characters (full style)
+const pixelBorder = {
+  topLeft: "▓",
+  topRight: "▓",
+  bottomLeft: "▓",
+  bottomRight: "▓",
+  top: "▓",
+  right: "▓",
+  bottom: "▓",
+  left: "▓",
+} as const;
+
+const message = boxen(output, {
+  padding: 1,
+  margin: 1,
+  borderStyle: pixelBorder,
+});
 
 console.log(message);
