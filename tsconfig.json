@@ -24,6 +24,6 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["index.ts"],
+  "include": ["index.ts", "portfolio-projects.ts"],
   "exclude": ["node_modules"]
 }

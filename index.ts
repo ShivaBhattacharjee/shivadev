@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { execSync } from "node:child_process";
 import * as os from "node:os";
 import * as readline from "readline";
+import { fetchPortfolioProjects, type PortfolioProject } from "./portfolio-projects.js";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -64,26 +65,6 @@ const experiences = [
     responsibility:
       "Develop websites and systems to be used by its clients and maintain current existing websites and systems.",
     techstacks: ["ReactJS", "NextJS", "Framer Motion", "ThreeJS"],
-  },
-];
-
-const projects = [
-  {
-    title: "Taptick",
-    category: "Open Source · npm",
-    description:
-      "Haptic feedback for the mobile web with zero dependencies. React, Vue, Svelte, and vanilla APIs with presets like success, warning, selection, and impact-style taps via the Vibration API.",
-    techstacks: ["TypeScript", "React", "Vue", "Svelte"],
-    status: "active",
-    link: "https://www.npmjs.com/package/taptickit",
-  },
-  {
-    title: "Image Sonification",
-    category: "Research Project",
-    description: "Converts images to audio and vice versa by mapping pixel colour and position to audio frequencies.",
-    techstacks: ["React", "TypeScript"],
-    status: "active",
-    link: "https://sonification.shiva.codes",
   },
 ];
 
@@ -357,7 +338,7 @@ const commands: Record<string, () => void | Promise<void>> = {
     console.log(`  ${redHi("about")}        ${dim("─")}  Who am I`);
     console.log(`  ${redHi("skills")}       ${dim("─")}  Languages, frameworks & tools`);
     console.log(`  ${redHi("experience")}   ${dim("─")}  Work history`);
-    console.log(`  ${redHi("projects")}     ${dim("─")}  Things I've built`);
+    console.log(`  ${redHi("projects")}     ${dim("─")}  Things I've built (live from portfolio)`);
     console.log(`  ${redHi("research")}     ${dim("─")}  Academic publications`);
     console.log(`  ${redHi("socials")}      ${dim("─")}  Links & contact`);
     console.log(`  ${redHi("neofetch")}     ${dim("─")}  System info (like neofetch)`);
@@ -409,9 +390,20 @@ const commands: Record<string, () => void | Promise<void>> = {
     }
   },
 
-  projects() {
+  async projects() {
     console.log();
-    for (const proj of projects) {
+    console.log(`  ${dim("Loading projects …")}`);
+    console.log();
+    let list: PortfolioProject[];
+    try {
+      list = await fetchPortfolioProjects();
+    } catch (err) {
+      console.log(`  ${red("Could not load projects.")} ${dim(String(err))}`);
+      console.log(`  ${dim("Check your network")}`);
+      console.log();
+      return;
+    }
+    for (const proj of list) {
       console.log(`  ${bold(redHi(proj.title))} ${dim(`[${proj.category}]`)}`);
       console.log(`  ${white(proj.description)}`);
       console.log(`  ${dim("Tech:")} ${proj.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
@@ -478,9 +470,11 @@ const commands: Record<string, () => void | Promise<void>> = {
   },
 
   exit() {
+    replAlive = false;
     console.log();
     console.log(dim("  Goodbye! 👋"));
     console.log();
+    rl.close();
     process.exit(0);
   },
 };
@@ -490,7 +484,7 @@ const commands: Record<string, () => void | Promise<void>> = {
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: true,
+  terminal: Boolean(process.stdin.isTTY),
 });
 
 let replAlive = true;
@@ -505,17 +499,20 @@ console.log(banner);
 function ask() {
   if (!replAlive) return;
   rl.question(prompt, (input) => {
-    void handleInput(input);
+    void (async () => {
+      try {
+        await handleInput(input);
+      } finally {
+        if (replAlive) ask();
+      }
+    })();
   });
 }
 
 async function handleInput(raw: string) {
   const cmd = raw.trim().toLowerCase();
 
-  if (!cmd) {
-    ask();
-    return;
-  }
+  if (!cmd) return;
 
   const run = commands[cmd];
   if (run) {
@@ -526,8 +523,6 @@ async function handleInput(raw: string) {
     console.log(`  ${dim("Type")} ${white("help")} ${dim("to see available commands.")}`);
     console.log();
   }
-
-  if (replAlive) ask();
 }
 
 ask();
