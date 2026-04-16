@@ -4,102 +4,24 @@ import chalk from "chalk";
 import { execSync } from "node:child_process";
 import * as os from "node:os";
 import * as readline from "readline";
+import { createRequire } from "node:module";
 import { fetchPortfolioProjects, type PortfolioProject } from "./portfolio-projects.js";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Config ───────────────────────────────────────────────────────────────────
 
-const about = {
-  name: "Shiva Bhattacharjee",
-  title: "Applied AI Engineer",
-  bio: "Hi! I'm Shiva Bhattacharjee an Applied AI Engineer. I love development, making stuff, and experimenting with whatever catches my interest. Most of my work revolves around LLMs, agentic systems, and building developer tools on top of them. I've spent time working on complex multi-model pipelines orchestrating parallel image generation calls, chaining inference steps with memory-augmented context, and wiring up distributed task queues to keep everything running at scale. I've won 5 hackathons and was a Smart India Hackathon finalist in my first semester. I enjoy the messy, behind-the-scenes infrastructure work just as much as shipping the final product.",
-  website: "https://shiva.codes",
-  github: "https://github.com/shivabhattacharjee",
-  twitter: "https://x.com/sh17va",
-  linkedin: "https://linkedin.com/in/shiva-bhattacharjee",
-  email: "hello@theshiva.xyz",
+const _require = createRequire(import.meta.url);
+const config = _require("./config.json") as {
+  about: { name: string; title: string; bio: string; website: string; github: string; twitter: string; linkedin: string; email: string };
+  skills: { languages: string[]; frameworks: string[]; others: string[] };
+  experiences: { role: string; year: string; company: string; type: string; location: string; responsibility: string; techstacks: string[] }[];
+  research: { title: string; category: string; description: string; journal: string; year: string; status: string; collaboration: string }[];
+  portfolioProjectsUrl: string;
 };
 
-const skills = {
-  languages: ["JavaScript", "TypeScript", "Python", "Go", "Rust"],
-  frameworks: ["Next.js", "Express.js", "TailwindCSS", "Hono", "Svelte", "Gorilla"],
-  others: ["Docker", "MongoDB", "PostgreSQL", "Git", "Linux", "Redis", "Firebase", "GCP"],
-};
-
-const experiences = [
-  {
-    role: "Applied AI & Full Stack Engineer",
-    year: "July 2025 - Present",
-    company: "Bez",
-    type: "Full-Time",
-    location: "Remote",
-    responsibility:
-      "Reduced jewelry design turnaround from days to minutes by building AI agent workflows using the Vercel AI SDK with observability via Langfuse. Built an interactive jewelry design canvas using React + XYFlow enabling credit-gated editing and real-time agent-driven design iteration. Developed a Redis queue pipeline generating 70+ jewelry design variations in 5 minutes per batch. Built a custom memory system with rolling context per user to retain design preferences and reduce duplicate generations.",
-    techstacks: ["Vercel AI SDK", "React", "XYFlow", "Redis", "Firebase", "GCP", "Docker", "Langfuse", "NextJS"],
-  },
-  {
-    role: "Member of Technical Staff",
-    year: "Jan 2025 - July 2025",
-    company: "Navdyut AI",
-    type: "Full-Time",
-    location: "India, On-Site",
-    responsibility:
-      "Built an Assamese chatbot on a 22B Mistral model with RAG pipelines for translation and government applications. Scaled the system to 500+ users and contributed to deployments for public sector use. Project work was featured in regional newspapers.",
-    techstacks: ["Mistral", "RAG", "Langchain", "LlamaIndex", "Pinecone", "NextJS", "TailwindCSS", "Supabase"],
-  },
-  {
-    role: "Software Engineer",
-    year: "Oct 2024 - Jan 2025",
-    company: "TTIPL",
-    type: "Full-Time",
-    location: "India, On-Site",
-    responsibility:
-      "Built internal ERP modules for billing, vendor, and project tracking used by construction operations. Developed semantic project document search using RAG pipelines with OpenAI embeddings and vector databases. Optimized API performance and database queries improving internal tool response times and reliability.",
-    techstacks: ["ReactJS", "NextJS", "TailwindCSS", "Prisma", "Supabase", "OpenAI", "Vector DB", "RAG"],
-  },
-  {
-    role: "Software Developer Intern",
-    year: "Feb 2024 - Sept 2024",
-    company: "GITCS.",
-    type: "Internship",
-    location: "Guwahati, On-Site",
-    responsibility:
-      "Develop websites and systems to be used by its clients and maintain current existing websites and systems.",
-    techstacks: ["ReactJS", "NextJS", "Framer Motion", "ThreeJS"],
-  },
-];
-
-const research = [
-  {
-    title: "PolySpeech-HS: Multilingual Non-Autoregressive TTS with Hidden-State Adapters",
-    category: "Speech Synthesis & Multilingual AI",
-    description:
-      "A non-autoregressive TTS multilingual synthesis framework for Indian languages. Unified encoder-decoder architecture with lightweight hidden-state adapters. Achieved MOS of 4.30, MCD of 4.7 dB, and RTF of 0.13 across six Indian languages.",
-    journal: "IEEE Transactions on Audio, Speech and Language Processing",
-    year: "2025",
-    status: "under-review",
-    collaboration: "Vellore Institute of Technology",
-  },
-  {
-    title: "Data-Centric Transformer Fine-Tuning for Rapid Domain Adaptation",
-    category: "Large Language Models & Domain Adaptation",
-    description:
-      "A data-centric, hardware-light workflow for fine-tuning transformers. Scrapes web content, converts to Q&A pairs, fine-tunes GPT-2-Medium (355M) in ~7 min on a single RTX-3060. Achieves 67.3% accuracy (+34% over base) with 1.4s latency and zero inference cost.",
-    journal: "IEEE Transactions on Computational Social Systems",
-    year: "2025",
-    status: "under-review",
-    collaboration: "Vellore Institute of Technology",
-  },
-  {
-    title: "Fine-Tuning Mistral 22B: The First LLM for Assamese Language Tasks",
-    category: "Low-Resource Language Processing",
-    description:
-      "The first fine-tuned LLM for Assamese (~15M speakers). Introduces AssamText-750K dataset and custom Unicode mapping. Achieves 20% average improvement across text generation, sentiment analysis, and Assamese-to-English translation.",
-    journal: "IEEE Transactions on Neural Networks and Learning Systems",
-    year: "2025",
-    status: "under-review",
-    collaboration: "Vellore Institute of Technology",
-  },
-];
+const about = config.about;
+const skills = config.skills;
+const experiences = config.experiences;
+const research = config.research;
 
 // ─── Theme & helpers ─────────────────────────────────────────────────────────
 
@@ -375,6 +297,37 @@ const commands: Record<string, () => void | Promise<void>> = {
   },
 
   experience() {
+    const parseExpDate = (s: string): Date => {
+      const monthMap: Record<string, number> = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+      };
+      const lower = s.trim().toLowerCase();
+      if (lower === "present") return new Date();
+      const [mon, yr] = lower.split(" ");
+      return new Date(Number(yr), monthMap[mon.slice(0, 3)] ?? 0, 1);
+    };
+
+    const allDates = experiences.flatMap((e) => {
+      const [start, end] = e.year.split("-").map((p) => p.trim());
+      return [parseExpDate(start), parseExpDate(end ?? "present")];
+    });
+    const earliest = new Date(Math.min(...allDates.map((d) => d.getTime())));
+    const latest = new Date(Math.max(...allDates.map((d) => d.getTime())));
+    const totalMonths =
+      (latest.getFullYear() - earliest.getFullYear()) * 12 +
+      (latest.getMonth() - earliest.getMonth());
+    const yrs = Math.floor(totalMonths / 12);
+    const mos = totalMonths % 12;
+    const totalLabel = yrs > 0 && mos > 0
+      ? `${yrs}y ${mos}m`
+      : yrs > 0
+        ? `${yrs} year${yrs > 1 ? "s" : ""}`
+        : `${mos} month${mos > 1 ? "s" : ""}`;
+
+    console.log();
+    console.log(`  ${dim("Total Experience:")} ${accent(totalLabel)}`);
+    console.log(`  ${dim("─".repeat(60))}`);
     console.log();
     for (const exp of experiences) {
       console.log(`  ${bold(redHi(exp.role))} ${dim("@")} ${white(exp.company)}`);

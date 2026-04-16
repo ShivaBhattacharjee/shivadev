@@ -1,7 +1,13 @@
 /**
  * Loads `projects` from Portfolio-2025 constants (raw JS on GitHub).
- * Override: PORTFOLIO_CONSTANTS_URL
+ * URL is read from config.json (portfolioProjectsUrl).
+ * Override at runtime: PORTFOLIO_CONSTANTS_URL env var.
  */
+
+import { createRequire } from "node:module"
+
+const _require = createRequire(import.meta.url)
+const _config = _require("./config.json") as { portfolioProjectsUrl: string }
 
 export interface PortfolioProject {
   title: string
@@ -15,8 +21,7 @@ export interface PortfolioProject {
   previewDark?: string
 }
 
-export const DEFAULT_PORTFOLIO_CONSTANTS_URL =
-  "https://raw.githubusercontent.com/ShivaBhattacharjee/Portfolio-2025/main/src/constants/index.js"
+export const DEFAULT_PORTFOLIO_CONSTANTS_URL = _config.portfolioProjectsUrl
 
 function extractProjectsArrayLiteral(js: string): string {
   const marker = "export const projects"
