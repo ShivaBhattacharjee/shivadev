@@ -21,15 +21,36 @@ export interface PortfolioProject {
   previewDark?: string
 }
 
+export interface Experience {
+  role: string
+  year: string
+  company: string
+  type: string
+  location: string
+  responsibility: string[]
+  techstacks: string[]
+}
+
+export interface Research {
+  title: string
+  category: string
+  description: string
+  techstacks: string[]
+  status: string
+  link: string
+  journal: string
+  year: string
+  collaboration: string
+}
+
 export const DEFAULT_PORTFOLIO_CONSTANTS_URL = _config.portfolioProjectsUrl
 
-function extractProjectsArrayLiteral(js: string): string {
-  const marker = "export const projects"
+function extractArrayLiteral(js: string, marker: string): string {
   const mi = js.indexOf(marker)
   if (mi === -1) throw new Error(`Could not find ${marker} in remote file`)
 
   const start = js.indexOf("[", mi)
-  if (start === -1) throw new Error("Could not find projects array opening [")
+  if (start === -1) throw new Error("Could not find array opening [")
 
   let depth = 0
   let inString = false
@@ -59,7 +80,7 @@ function extractProjectsArrayLiteral(js: string): string {
     }
   }
 
-  throw new Error("Unterminated projects array (missing closing ])")
+  throw new Error(`Unterminated array for ${marker} (missing closing ])`)
 }
 
 function parseProjectsArrayLiteral(literal: string): PortfolioProject[] {
@@ -77,6 +98,32 @@ function parseProjectsArrayLiteral(literal: string): PortfolioProject[] {
   return data as PortfolioProject[]
 }
 
+function parseExperiencesArrayLiteral(literal: string): Experience[] {
+  const fn = new Function(`return (${literal})`) as () => unknown
+  const data = fn()
+  if (!Array.isArray(data)) throw new Error("experiences is not an array")
+  return data.map((item: Record<string, unknown>) => {
+    const responsibility = (item.responsibility as { text: string; bold?: boolean; href?: string }[][])
+      .map(group => group.map(r => r.text).join(""))
+    return {
+      role: item.role as string,
+      year: item.year as string,
+      company: item.company as string,
+      type: item.type as string,
+      location: item.location as string,
+      responsibility,
+      techstacks: item.techstacks as string[],
+    }
+  })
+}
+
+function parseResearchArrayLiteral(literal: string): Research[] {
+  const fn = new Function(`return (${literal})`) as () => unknown
+  const data = fn()
+  if (!Array.isArray(data)) throw new Error("research is not an array")
+  return data as Research[]
+}
+
 export async function fetchPortfolioProjects({
   url = process.env.PORTFOLIO_CONSTANTS_URL ?? DEFAULT_PORTFOLIO_CONSTANTS_URL,
   signal,
@@ -87,6 +134,34 @@ export async function fetchPortfolioProjects({
   const res = await fetch(url, { redirect: "follow", signal })
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
   const js = await res.text()
-  const literal = extractProjectsArrayLiteral(js)
+  const literal = extractArrayLiteral(js, "export const projects")
   return parseProjectsArrayLiteral(literal)
+}
+
+export async function fetchExperiences({
+  url = process.env.PORTFOLIO_CONSTANTS_URL ?? DEFAULT_PORTFOLIO_CONSTANTS_URL,
+  signal,
+}: {
+  url?: string
+  signal?: AbortSignal
+} = {}): Promise<Experience[]> {
+  const res = await fetch(url, { redirect: "follow", signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+  const js = await res.text()
+  const literal = extractArrayLiteral(js, "export const experiences")
+  return parseExperiencesArrayLiteral(literal)
+}
+
+export async function fetchResearch({
+  url = process.env.PORTFOLIO_CONSTANTS_URL ?? DEFAULT_PORTFOLIO_CONSTANTS_URL,
+  signal,
+}: {
+  url?: string
+  signal?: AbortSignal
+} = {}): Promise<Research[]> {
+  const res = await fetch(url, { redirect: "follow", signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+  const js = await res.text()
+  const literal = extractArrayLiteral(js, "export const research")
+  return parseResearchArrayLiteral(literal)
 }

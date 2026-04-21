@@ -1,193 +1,44 @@
 #!/usr/bin/env node
 
 import chalk from "chalk";
-import { execSync } from "node:child_process";
 import * as os from "node:os";
 import * as readline from "readline";
 import { createRequire } from "node:module";
-import { fetchPortfolioProjects, type PortfolioProject } from "./portfolio-projects.js";
-
-// ─── Config ───────────────────────────────────────────────────────────────────
+import { fetchPortfolioProjects, fetchExperiences, fetchResearch, type PortfolioProject, type Experience, type Research } from "./portfolio-projects.js";
+import { red, redHi, white, yellow, blue, dim, bold, gray, log, border, accent } from "./src/logger.js";
+import { gatherNeofetchRows, stripAnsi, wrapText } from "./src/utils.js";
+import { getLogoLines, getMascotBlock } from "./src/ascii.js";
+import { COLOR_PRESETS, getCurrentColor, applyColorTheme, applyHexColor } from "./src/theme.js";
 
 const _require = createRequire(import.meta.url);
 const config = _require("./config.json") as {
   about: { name: string; title: string; bio: string; website: string; github: string; twitter: string; linkedin: string; email: string };
   skills: { languages: string[]; frameworks: string[]; others: string[] };
-  experiences: { role: string; year: string; company: string; type: string; location: string; responsibility: string; techstacks: string[] }[];
-  research: { title: string; category: string; description: string; journal: string; year: string; status: string; collaboration: string }[];
   portfolioProjectsUrl: string;
 };
 
 const about = config.about;
 const skills = config.skills;
-const experiences = config.experiences;
-const research = config.research;
+let experiences: Experience[] = [];
+let research: Research[] = [];
 
-// ─── Theme & helpers ─────────────────────────────────────────────────────────
+function buildBanner(): string {
+  return `
+${getMascotBlock()}
 
-const dim = chalk.dim;
-const bold = chalk.bold;
-const yellow = chalk.yellow;
-const blue = chalk.blue;
-const red = chalk.red;
-const redHi = chalk.redBright;
-const white = chalk.white;
-const gray = chalk.gray;
-
-function border(s: string): string {
-  return red(s);
-}
-
-function accent(s: string): string {
-  return bold(redHi(s));
-}
-
-function tryExec(command: string): string | undefined {
-  try {
-    return execSync(command, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      timeout: 2500,
-    }).trim();
-  } catch {
-    return undefined;
-  }
-}
-
-function formatGiB(bytes: number): string {
-  return (bytes / 1024 ** 3).toFixed(2);
-}
-
-function gatherNeofetchRows(): { label: string; value: string }[] {
-  const isDarwin = process.platform === "darwin";
-  const isWin = process.platform === "win32";
-
-  const productName = isDarwin ? tryExec("sw_vers -productName") : undefined;
-  const productVersion = isDarwin ? tryExec("sw_vers -productVersion") : undefined;
-  const buildVersion = isDarwin ? tryExec("sw_vers -buildVersion") : undefined;
-  const darwinParts = [
-    productName ?? os.type(),
-    productVersion,
-    buildVersion && `(${buildVersion})`,
-    os.machine(),
-  ].filter(Boolean) as string[];
-
-  let osLine: string;
-  if (isDarwin) {
-    osLine = darwinParts.join(" ");
-  } else if (isWin) {
-    const winVer = typeof os.version === "function" ? os.version() : "";
-    osLine = [winVer || `${os.type()} ${os.release()}`, os.machine()].filter(Boolean).join(" ");
-  } else {
-    osLine = [productName ?? os.type(), productVersion, buildVersion && `(${buildVersion})`, os.machine()]
-      .filter(Boolean)
-      .join(" ");
-  }
-
-  const hostModel = isDarwin ? tryExec("sysctl -n hw.model") : undefined;
-  const cpuBrand = isDarwin ? tryExec("sysctl -n machdep.cpu.brand_string") : os.cpus()[0]?.model;
-
-  const total = os.totalmem();
-  const used = total - os.freemem();
-  const memoryLine = `${formatGiB(used)} GiB / ${formatGiB(total)} GiB`;
-
-  const shellName = isWin
-    ? (process.env.ComSpec?.split(/[/\\]/).pop() ?? "—")
-    : (process.env.SHELL?.split("/").pop() ?? "—");
-
-  const runtime = process.versions.bun ? `Bun ${process.versions.bun}` : `Node ${process.version}`;
-
-  const kernelLine = isDarwin
-    ? `Darwin ${os.release()}`
-    : isWin
-      ? `Windows NT ${os.release()}`
-      : `${os.type()} ${os.release()}`;
-
-  const userName = process.env.USER ?? process.env.USERNAME ?? "—";
-
-  return [
-    { label: "OS", value: osLine || `${os.type()} ${os.release()} ${os.machine()}` },
-    { label: "Host", value: hostModel ?? os.hostname() },
-    { label: "Kernel", value: kernelLine },
-    { label: "Shell", value: shellName },
-    { label: "Terminal", value: process.env.TERM_PROGRAM ?? process.env.TERM ?? "—" },
-    { label: "CPU", value: cpuBrand ?? "—" },
-    { label: "Memory", value: memoryLine },
-    { label: "User", value: userName },
-    { label: "Runtime", value: runtime },
-  ];
-}
-
-const NEOFETCH_LOGO_RAW = [
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⡿⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⢀⣠⣤⣤⣤⣀⣀⠈⠋⠉⣁⣠⣤⣤⣤⣀⡀⠀⠀",
-  "⠀⢠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀",
-  "⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠋⠀",
-  "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀",
-  "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀",
-  "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀",
-  "⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⣀",
-  "⠀⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁",
-  "⠀⠀⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁⠀",
-  "⠀⠀⠀⠈⠙⢿⣿⣿⣿⠿⠟⠛⠻⠿⣿⣿⣿⡿⠋⠀⠀⠀",
-] as const;
-
-const NEOFETCH_LOGO_RAW_WINDOWS = [
-  "⠀⠀⠀⠀⠀⠆⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠐⢀⡙⠴⢖⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠠⠀⠀⠀⣤⠘⢛⢻⣿⣧⣿⣿⣿⣿⣿⣿⣤⣤⣀⣀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠠⠆⣀⠁⠤⠄⣘⠊⠦⢴⣿⣿⠉⠉⠉⣹⣿⠟⠻⢿⣿⣦⡀⠀⠀⠀⠀",
-  "⠀⠀⠀⢀⠉⠤⠄⣈⡘⠐⢡⣿⣿⠇⠀⠀⢠⣿⡏⠀⠀⠀⢸⣿⠁⠀⠀⠀⠀",
-  "⠀⠀⠀⡈⠠⠄⡈⠉⠽⠿⣿⣿⠿⠿⠿⣾⣿⣿⣤⣀⠀⣼⣿⡇⠀⠀⠀⠀⠀",
-  "⠰⠀⠀⠀⠶⠀⠀⠀⠁⢀⣿⣿⠁⠀⠀⢸⣿⠏⠹⢿⣿⣿⡿⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠋⣤⣄⣈⡈⠔⢰⣿⣿⠀⠀⠀⢠⣿⠃⠀⠀⠀⣼⣿⠃⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠘⠛⠿⠿⣿⣿⣿⣿⣷⣶⣿⣇⡀⠀⠀⣼⣿⠃⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠙⠛⠿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀",
-  "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
-] as const;
-
-function neofetchLogoLines(): string[] {
-  const raw = process.platform === "win32" ? NEOFETCH_LOGO_RAW_WINDOWS : NEOFETCH_LOGO_RAW;
-  return raw.map((line) => red(line));
-}
-
-const mascotStand = (): string[] => [
-  `  ${red("o")}`,
-  ` ${red("/")}${white("|")}${red("\\")}`,
-  `${red("/")} ${dim("·")} ${red("\\")}`,
-];
-
-const mascotJump = (): string[] => [
-  ` ${red("\\")}${white("o")}${red("/")}`,
-  `  ${white("|")}`,
-  ` ${red("/")} ${red("\\")}`,
-];
-
-function mascotStaticBlock(): string {
-  return mascotStand().join("\n");
-}
-
-async function runMascotDance(): Promise<void> {
-  const frames = [mascotStand(), mascotJump()];
-  console.log();
-  console.log(`  ${dim("dance — watch the lines below (stand ↔ jump):")}`);
-  console.log();
-  for (let i = 0; i < 8; i++) {
-    const frame = frames[i % frames.length];
-    for (const line of frame) console.log(`  ${line}`);
-    console.log();
-    await new Promise((resolve) => setTimeout(resolve, 400));
-  }
-  console.log(`  ${dim("nice.")}`);
-  console.log();
+${border("┌──────────────────────────────────────────────────────────────────┐")}
+${border("│")}                                                                  ${border("│")}
+${border("│")}   ${accent("Shiva Bhattacharjee")}  ${dim("// Applied AI Engineer")}                  ${border("│")}
+${border("│")}   ${dim("─────────────────────────────────────────")}                      ${border("│")}
+${border("│")}   ${dim("Type")} ${white("help")} ${dim("to see available commands.")}                         ${border("│")}
+${border("│")}   ${dim("Try")} ${white("neofetch")} ${dim("·")} ${white("dance")}                                              ${border("│")}
+${border("│")}                                                                  ${border("│")}
+${border("└──────────────────────────────────────────────────────────────────┘")}
+`;
 }
 
 function buildNeofetchBodyLines(): string[] {
-  const logo = neofetchLogoLines();
+  const logo = getLogoLines();
   const rows = gatherNeofetchRows();
   const labelW = Math.max(...rows.map((row) => row.label.length), 0);
   const logoW = Math.max(...logo.map((l) => stripAnsi(l).length), 0);
@@ -208,95 +59,68 @@ function buildNeofetchBodyLines(): string[] {
 }
 
 function printNeofetchBlock(headerLine: string, bodyLines: string[]): void {
-  const margin = "  ";
-  console.log();
-  console.log(`${margin}${headerLine}`);
-  for (const line of bodyLines) console.log(`${margin}${line}`);
-  console.log();
+  log.empty();
+  console.log(`  ${headerLine}`);
+  for (const line of bodyLines) console.log(`  ${line}`);
+  log.empty();
 }
 
-function stripAnsi(s: string): string {
-  return s.replace(/\x1b\[[0-9;]*m/g, "");
-}
-
-function wrapText(text: string, width: number): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    if (current.length + word.length + 1 > width) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = current ? `${current} ${word}` : word;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
-// ─── ASCII banner ────────────────────────────────────────────────────────────
-
-const banner = `
-${mascotStaticBlock()}
-
-${border("┌──────────────────────────────────────────────────────────────────┐")}
-${border("│")}                                                                  ${border("│")}
-${border("│")}   ${accent("Shiva Bhattacharjee")}  ${dim("// Applied AI Engineer")}                  ${border("│")}
-${border("│")}   ${dim("─────────────────────────────────────────")}                      ${border("│")}
-${border("│")}   ${dim("Type")} ${white("help")} ${dim("to see available commands.")}                         ${border("│")}
-${border("│")}   ${dim("Try")} ${white("neofetch")} ${dim("·")} ${white("dance")}                                              ${border("│")}
-${border("│")}                                                                  ${border("│")}
-${border("└──────────────────────────────────────────────────────────────────┘")}
-`;
-
-// ─── Commands ────────────────────────────────────────────────────────────────
-
-const commands: Record<string, () => void | Promise<void>> = {
+const commands: Record<string, (args?: string) => void | Promise<void>> = {
   help() {
-    console.log();
-    console.log(bold(`  ${redHi("Available Commands:")}`));
-    console.log();
-    console.log(`  ${redHi("about")}        ${dim("─")}  Who am I`);
-    console.log(`  ${redHi("skills")}       ${dim("─")}  Languages, frameworks & tools`);
-    console.log(`  ${redHi("experience")}   ${dim("─")}  Work history`);
-    console.log(`  ${redHi("projects")}     ${dim("─")}  Things I've built (live from portfolio)`);
-    console.log(`  ${redHi("research")}     ${dim("─")}  Academic publications`);
-    console.log(`  ${redHi("socials")}      ${dim("─")}  Links & contact`);
-    console.log(`  ${redHi("neofetch")}     ${dim("─")}  System info (like neofetch)`);
-    console.log(`  ${redHi("fetch")}        ${dim("─")}  Alias for neofetch`);
-    console.log(`  ${redHi("dance")}        ${dim("─")}  Mascot jumps`);
-    console.log(`  ${redHi("banner")}       ${dim("─")}  Show the welcome banner`);
-    console.log(`  ${redHi("clear")}        ${dim("─")}  Clear the screen`);
-    console.log(`  ${redHi("exit")}         ${dim("─")}  Quit`);
-    console.log();
+    log.empty();
+    log.label("Available Commands:");
+    log.empty();
+    log.cli(`  ${redHi("about")}        ${dim("─")}  Who am I`);
+    log.cli(`  ${redHi("skills")}       ${dim("─")}  Languages, frameworks & tools`);
+    log.cli(`  ${redHi("experience")}   ${dim("─")}  Work history`);
+    log.cli(`  ${redHi("projects")}     ${dim("─")}  Things I've built (live from portfolio)`);
+    log.cli(`  ${redHi("research")}     ${dim("─")}  Academic publications`);
+    log.cli(`  ${redHi("socials")}      ${dim("─")}  Links & contact`);
+    log.cli(`  ${redHi("neofetch")}     ${dim("─")}  System info (like neofetch)`);
+    log.cli(`  ${redHi("fetch")}        ${dim("─")}  Alias for neofetch`);
+    log.cli(`  ${redHi("dance")}        ${dim("─")}  Mascot jumps`);
+    log.cli(`  ${redHi("banner")}       ${dim("─")}  Show the welcome banner`);
+    log.cli(`  ${redHi("clear")}        ${dim("─")}  Clear the screen`);
+    log.cli(`  ${redHi("color")}      ${dim("─")}  Change theme color (e.g. color green)`);
+    log.cli(`  ${redHi("exit")}         ${dim("─")}  Quit`);
+    log.empty();
   },
 
   about() {
-    console.log();
-    console.log(bold(`  ${accent(about.name)}`));
+    log.empty();
+    console.log(`  ${accent(about.name)}`);
     console.log(`  ${red(about.title)}`);
-    console.log();
+    log.empty();
     for (const line of wrapText(about.bio, 70)) {
-      console.log(`  ${white(line)}`);
+      log.cli(`  ${white(line)}`);
     }
-    console.log();
+    log.empty();
   },
 
   skills() {
-    console.log();
-    console.log(bold(`  ${redHi("Languages:")}`));
-    console.log(`  ${skills.languages.map((l) => yellow(l)).join(dim(" · "))}`);
-    console.log();
-    console.log(bold(`  ${redHi("Frameworks:")}`));
-    console.log(`  ${skills.frameworks.map((f) => redHi(f)).join(dim(" · "))}`);
-    console.log();
-    console.log(bold(`  ${redHi("Tools & Infrastructure:")}`));
-    console.log(`  ${skills.others.map((o) => blue(o)).join(dim(" · "))}`);
-    console.log();
+    log.empty();
+    log.cli(`  ${bold(redHi("Languages:"))}`);
+    log.cli(`  ${skills.languages.map((l) => yellow(l)).join(dim(" · "))}`);
+    log.empty();
+    log.cli(`  ${bold(redHi("Frameworks:"))}`);
+    log.cli(`  ${skills.frameworks.map((f) => redHi(f)).join(dim(" · "))}`);
+    log.empty();
+    log.cli(`  ${bold(redHi("Tools & Infrastructure:"))}`);
+    log.cli(`  ${skills.others.map((o) => blue(o)).join(dim(" · "))}`);
+    log.empty();
   },
 
-  experience() {
+  async experience() {
+    log.empty();
+    log.dim("Loading experiences …");
+    log.empty();
+    try {
+      experiences = await fetchExperiences();
+    } catch (err) {
+      log.cli(`  ${red("Could not load experiences from remote.")} ${dim(String(err))}`);
+      log.empty();
+    }
+
     const parseExpDate = (s: string): Date => {
       const monthMap: Record<string, number> = {
         jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
@@ -325,77 +149,88 @@ const commands: Record<string, () => void | Promise<void>> = {
         ? `${yrs} year${yrs > 1 ? "s" : ""}`
         : `${mos} month${mos > 1 ? "s" : ""}`;
 
-    console.log();
-    console.log(`  ${dim("Total Experience:")} ${accent(totalLabel)}`);
-    console.log(`  ${dim("─".repeat(60))}`);
-    console.log();
-    for (const exp of experiences) {
-      console.log(`  ${bold(redHi(exp.role))} ${dim("@")} ${white(exp.company)}`);
-      console.log(`  ${dim(exp.year)} ${dim("·")} ${dim(exp.type)} ${dim("·")} ${dim(exp.location)}`);
-      console.log();
-      for (const line of wrapText(exp.responsibility, 68)) {
-        console.log(`  ${gray(line)}`);
+    log.cli(`  ${dim("Total Experience:")} ${accent(totalLabel)}`);
+    log.hr();
+    log.empty();
+    for (const exp of [...experiences].reverse()) {
+      log.cli(`  ${bold(redHi(exp.role))} ${dim("@")} ${white(exp.company)}`);
+      log.cli(`  ${dim(exp.year)} ${dim("·")} ${dim(exp.type)} ${dim("·")} ${dim(exp.location)}`);
+      log.empty();
+      for (const resp of exp.responsibility) {
+        log.bullet(resp);
       }
-      console.log();
-      console.log(`  ${dim("Stack:")} ${exp.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
-      console.log(`  ${dim("─".repeat(60))}`);
-      console.log();
+      log.empty();
+      log.cli(`  ${dim("Stack:")} ${exp.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
+      log.hr();
+      log.empty();
     }
   },
 
   async projects() {
-    console.log();
-    console.log(`  ${dim("Loading projects …")}`);
-    console.log();
+    log.empty();
+    log.dim("Loading projects …");
+    log.empty();
     let list: PortfolioProject[];
     try {
       list = await fetchPortfolioProjects();
     } catch (err) {
-      console.log(`  ${red("Could not load projects.")} ${dim(String(err))}`);
-      console.log(`  ${dim("Check your network")}`);
-      console.log();
+      log.cli(`  ${red("Could not load projects.")} ${dim(String(err))}`);
+      log.cli(`  ${dim("Check your network")}`);
+      log.empty();
       return;
     }
     for (const proj of list) {
-      console.log(`  ${bold(redHi(proj.title))} ${dim(`[${proj.category}]`)}`);
-      console.log(`  ${white(proj.description)}`);
-      console.log(`  ${dim("Tech:")} ${proj.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
-      console.log(`  ${dim("Status:")} ${proj.status === "active" ? redHi("Active") : dim(proj.status)}`);
+      log.cli(`  ${bold(redHi(proj.title))} ${dim(`[${proj.category}]`)}`);
+      log.cli(`  ${white(proj.description)}`);
+      log.cli(`  ${dim("Tech:")} ${proj.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
+      log.cli(`  ${dim("Status:")} ${proj.status === "active" ? redHi("Active") : dim(proj.status)}`);
       if (proj.link !== "#") {
-        console.log(`  ${dim("Link:")} ${blue(proj.link)}`);
+        log.cli(`  ${dim("Link:")} ${blue(proj.link)}`);
       }
-      console.log();
+      log.empty();
     }
   },
 
-  research() {
-    console.log();
+  async research() {
+    log.empty();
+    log.dim("Loading research …");
+    log.empty();
+    try {
+      research = await fetchResearch();
+    } catch (err) {
+      log.cli(`  ${red("Could not load research from remote.")} ${dim(String(err))}`);
+      log.empty();
+      return;
+    }
     for (const paper of research) {
-      console.log(`  ${bold(redHi(paper.title))}`);
-      console.log(`  ${dim(paper.category)}`);
-      console.log();
+      log.cli(`  ${bold(redHi(paper.title))}`);
+      log.cli(`  ${dim(paper.category)}`);
+      log.empty();
       for (const line of wrapText(paper.description, 68)) {
-        console.log(`  ${gray(line)}`);
+        log.cli(`  ${gray(line)}`);
       }
-      console.log();
-      console.log(`  ${dim("Journal:")} ${white(paper.journal)}`);
-      console.log(`  ${dim("Year:")} ${white(paper.year)}  ${dim("Status:")} ${yellow(paper.status)}`);
-      console.log(`  ${dim("With:")} ${white(paper.collaboration)}`);
-      console.log(`  ${dim("─".repeat(60))}`);
-      console.log();
+      log.empty();
+      log.cli(`  ${dim("Journal:")} ${white(paper.journal)}`);
+      log.cli(`  ${dim("Year:")} ${white(paper.year)}  ${dim("Status:")} ${yellow(paper.status)}`);
+      log.cli(`  ${dim("With:")} ${white(paper.collaboration)}`);
+      if (paper.techstacks.length > 0) {
+        log.cli(`  ${dim("Tech:")} ${paper.techstacks.map((t) => yellow(t)).join(dim(", "))}`);
+      }
+      log.hr();
+      log.empty();
     }
   },
 
   socials() {
-    console.log();
-    console.log(bold(`  ${redHi("Connect with me:")}`));
-    console.log();
-    console.log(`  ${bold(red("Website"))}    ${blue(about.website)}`);
-    console.log(`  ${bold(red("GitHub"))}     ${blue(about.github)}`);
-    console.log(`  ${bold(red("Twitter"))}    ${blue(about.twitter)}`);
-    console.log(`  ${bold(red("LinkedIn"))}   ${blue(about.linkedin)}`);
-    console.log(`  ${bold(red("Email"))}      ${white(about.email)}`);
-    console.log();
+    log.empty();
+    log.label("Connect with me:");
+    log.empty();
+    log.cli(`  ${bold(red("Website"))}    ${blue(about.website)}`);
+    log.cli(`  ${bold(red("GitHub"))}     ${blue(about.github)}`);
+    log.cli(`  ${bold(red("Twitter"))}    ${blue(about.twitter)}`);
+    log.cli(`  ${bold(red("LinkedIn"))}   ${blue(about.linkedin)}`);
+    log.cli(`  ${bold(red("Email"))}      ${white(about.email)}`);
+    log.empty();
   },
 
   neofetch() {
@@ -410,29 +245,63 @@ const commands: Record<string, () => void | Promise<void>> = {
   },
 
   async dance() {
-    await runMascotDance();
+    const { runDance } = await import("./src/ascii.js");
+    await runDance();
   },
 
   banner() {
-    console.log(banner);
+    console.log(buildBanner());
   },
 
   clear() {
     console.clear();
-    console.log(banner);
+    console.log(buildBanner());
+  },
+
+  color(args?: string) {
+    const input = (args ?? "").trim();
+    if (!input) {
+      log.empty();
+      log.cli(`  ${dim("Available colors:")} ${Object.keys(COLOR_PRESETS).join(dim(", "))}`);
+      log.cli(`  ${dim("Current:")} ${redHi(getCurrentColor())}`);
+      log.cli(`  ${dim("Usage:")} ${white("color <name>")} ${dim("or")} ${white("color #rrggbb")}`);
+      log.empty();
+      return;
+    }
+    const lower = input.toLowerCase();
+    if (applyColorTheme(lower)) {
+      log.empty();
+      log.cli(`  ${dim("Theme set to:")} ${redHi(lower)}`);
+      log.empty();
+      console.log(buildBanner());
+      log.empty();
+      return;
+    }
+    const hexInput = lower.startsWith("#") ? lower : "#" + lower;
+    const rgb = (() => { const m = hexInput.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i); return m ? hexInput : null; })();
+    if (rgb && applyHexColor(rgb)) {
+      log.empty();
+      log.cli(`  ${dim("Theme set to:")} ${redHi(input)}`);
+      log.empty();
+      console.log(buildBanner());
+      log.empty();
+      return;
+    }
+    log.empty();
+    log.cli(`  ${red("Unknown color:")} ${white(input)}`);
+    log.cli(`  ${dim("Available:")} ${Object.keys(COLOR_PRESETS).join(dim(", "))}`);
+    log.empty();
   },
 
   exit() {
     replAlive = false;
-    console.log();
-    console.log(dim("  Goodbye! 👋"));
-    console.log();
+    log.empty();
+    log.dim("  Goodbye! 👋");
+    log.empty();
     rl.close();
     process.exit(0);
   },
 };
-
-// ─── REPL ────────────────────────────────────────────────────────────────────
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -445,13 +314,15 @@ rl.on("close", () => {
   replAlive = false;
 });
 
-const prompt = `${redHi("visitor")}${dim("@")}${red("shiva.codes")}${dim(":")}${yellow("~")}${dim("$")} `;
+function getPrompt(): string {
+  return `${redHi("visitor")}${dim("@")}${red("shiva.codes")}${dim(":")}${yellow("~")}${dim("$")} `;
+}
 
-console.log(banner);
+console.log(buildBanner());
 
 function ask() {
   if (!replAlive) return;
-  rl.question(prompt, (input) => {
+  rl.question(getPrompt(), (input) => {
     void (async () => {
       try {
         await handleInput(input);
@@ -463,18 +334,21 @@ function ask() {
 }
 
 async function handleInput(raw: string) {
-  const cmd = raw.trim().toLowerCase();
+  const trimmed = raw.trim();
+  if (!trimmed) return;
 
-  if (!cmd) return;
+  const [cmd, ...argParts] = trimmed.split(/\s+/);
+  const cmdLower = cmd.toLowerCase();
+  const args = argParts.join(" ");
 
-  const run = commands[cmd];
+  const run = commands[cmdLower];
   if (run) {
-    await Promise.resolve(run());
+    await Promise.resolve(run(args));
   } else {
-    console.log();
-    console.log(`  ${red("Command not found:")} ${white(cmd)}`);
-    console.log(`  ${dim("Type")} ${white("help")} ${dim("to see available commands.")}`);
-    console.log();
+    log.empty();
+    log.cli(`  ${red("Command not found:")} ${white(cmd)}`);
+    log.cli(`  ${dim("Type")} ${white("help")} ${dim("to see available commands.")}`);
+    log.empty();
   }
 }
 
